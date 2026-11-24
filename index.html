@@ -695,12 +695,21 @@ document.addEventListener('keydown', e => {
   }
 });
 let tx = null, ty = null;
-$('stage').addEventListener('touchstart', e => { if (e.touches.length === 1) { tx = e.touches[0].clientX; ty = e.touches[0].clientY; } }, {passive:true});
+// Swipe to turn pages, but only a deliberate one-finger flick on an unzoomed page.
+// Ignored when the phone's own pinch zoom is active (the reader is panning around the page),
+// when the gesture used two fingers (a pinch), or when it was a slow drag rather than a flick.
+let swipeT0 = 0, multiTouch = false;
+const pinchZoomed = () => !!(window.visualViewport && window.visualViewport.scale > 1.02);
+$('stage').addEventListener('touchstart', e => {
+  if (e.touches.length > 1) { multiTouch = true; tx = null; return; }
+  multiTouch = false; tx = e.touches[0].clientX; ty = e.touches[0].clientY; swipeT0 = Date.now();
+}, {passive:true});
+$('stage').addEventListener('touchmove', e => { if (e.touches.length > 1) { multiTouch = true; tx = null; } }, {passive:true});
 $('stage').addEventListener('touchend', e => {
-  if (tx === null || zoom) return;
-  const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
-  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) go(dx < 0 ? 1 : -1);
+  if (tx === null || zoom || multiTouch || pinchZoomed()) { if (e.touches.length === 0) tx = null; return; }
+  const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty, dt = Date.now() - swipeT0;
   tx = null;
+  if (dt < 600 && Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) go(dx < 0 ? 1 : -1);
 });
 window.addEventListener('resize', () => {
   if (!cur || !$('reader').classList.contains('open')) return;
