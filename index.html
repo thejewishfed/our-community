@@ -121,10 +121,9 @@ a{color:var(--accent)}
 @keyframes fadein{from{opacity:0;transform:translateX(var(--dir,0))}to{opacity:1;transform:none}}
 .stage.zoom{overflow:auto}
 .stage{touch-action:manipulation}
-.spread .pg{cursor:zoom-in}
-.stage.zoom .pg{cursor:zoom-out}
 .stage.zoom.dragging,.stage.zoom.dragging .pg{cursor:grabbing}
-.stage.zoom .spread{position:static;display:block;padding:16px;width:max-content;min-width:100%}
+.spread{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.stage.zoom .spread{position:static;display:block;padding:0;width:max-content;min-width:100%}
 .stage.zoom .spread .pg{margin:0 auto}
 .nav{position:absolute;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:50%;border:1px solid var(--stage-line);background:rgba(15,17,21,.55);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2}
 .nav:hover{background:rgba(15,17,21,.85)}
@@ -222,7 +221,7 @@ a{color:var(--accent)}
     <label for="slider" class="sr">Go to page</label>
     <input type="range" id="slider" min="1" value="1">
     <span id="pageLabel" aria-live="polite"></span>
-    <span class="hint" id="zoomHint">Tap a page to zoom</span>
+    <span class="hint" id="zoomHint">Double-tap a page to zoom</span>
   </div>
 </div>
 
@@ -352,8 +351,8 @@ function render(dir){
 function sizePages(){
   const sp = $('spread'), st = $('stage');
   if (zoom) {
-    // Zoomed: fill the width on large screens, about 2.4× on phones so columns are readable.
-    const w = Math.round(Math.max(st.clientWidth - 32, Math.min(1224, st.clientWidth * 2.4)));
+    // Zoomed: half a page fills the screen width, so one half-page column is readable.
+    const w = Math.round(Math.min(2448, st.clientWidth * 2));
     sp.querySelectorAll('.pg').forEach(b => { b.style.width = w + 'px'; b.style.height = Math.round(w * 792 / 612) + 'px'; });
     return;
   }
@@ -401,29 +400,35 @@ function fromHash(){
 $('prevBtn').onclick = () => go(-1);
 $('nextBtn').onclick = () => go(1);
 $('closeBtn').onclick = closeReader;
-function setZoom(on, fx, fy){
+// half: 0 = left half of the page, 1 = right half. fy: how far down the page to center (0–1).
+function setZoom(on, half, fy){
   zoom = on;
   $('zoomBtn').setAttribute('aria-pressed', on);
   $('stage').classList.toggle('zoom', on);
-  $('zoomHint').textContent = on ? 'Tap the page to zoom out' : 'Tap a page to zoom';
+  $('zoomHint').textContent = on ? 'Double-tap to zoom out' : 'Double-tap a page to zoom';
   render(0);
   if (on) {
     const st = $('stage'), b = $('spread').querySelector('.pg');
-    st.scrollLeft = b.offsetLeft + fx * b.offsetWidth - st.clientWidth / 2;
+    st.scrollLeft = b.offsetLeft + half * b.offsetWidth / 2;
     st.scrollTop = b.offsetTop + fy * b.offsetHeight - st.clientHeight / 2;
   }
 }
-$('zoomBtn').onclick = () => setZoom(!zoom, 0.5, 0);
-// Tap or click a page to zoom in on that spot; tap again to zoom back out.
-let drag = null, dragMoved = false;
+$('zoomBtn').onclick = () => setZoom(!zoom, 0, 0);
+// Double-tap (or double-click) a page to zoom so the tapped half of the page fills the screen;
+// double-tap again to zoom back out. Single taps do nothing, so reading and swiping aren't interrupted.
+let drag = null, dragMoved = false, lastTap = { t: 0, x: 0, y: 0 };
 $('spread').addEventListener('click', e => {
   if (e.target.closest('a')) return;
   if (dragMoved) { dragMoved = false; return; }
   const box = e.target.closest('.pg'); if (!box) return;
+  const now = Date.now();
+  const dbl = now - lastTap.t < 400 && Math.abs(e.clientX - lastTap.x) < 40 && Math.abs(e.clientY - lastTap.y) < 40;
+  lastTap = dbl ? { t: 0, x: 0, y: 0 } : { t: now, x: e.clientX, y: e.clientY };
+  if (!dbl) return;
   if (zoom) { setZoom(false); return; }
   const r = box.getBoundingClientRect();
   page = +box.dataset.p;
-  setZoom(true, (e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
+  setZoom(true, (e.clientX - r.left) / r.width < 0.5 ? 0 : 1, (e.clientY - r.top) / r.height);
 });
 // Drag to pan while zoomed (mouse); touch screens pan natively.
 $('stage').addEventListener('mousedown', e => {
