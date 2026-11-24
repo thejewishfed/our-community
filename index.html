@@ -278,7 +278,7 @@ a{color:var(--accent)}
     <span class="hint" id="zoomHint">Double-tap a page to zoom</span>
     <span class="zoomctl" role="group" aria-label="Zoom level">
       <button type="button" id="zoomOut" aria-label="Zoom out">−</button>
-      <output id="zoomLevel" aria-live="polite">2×</output>
+      <output id="zoomLevel" aria-live="polite">1×</output>
       <button type="button" id="zoomIn" aria-label="Zoom in">+</button>
     </span>
   </div>
@@ -410,7 +410,10 @@ function render(dir){
   [shown[0]-2, shown[0]-1, shown[shown.length-1]+1, shown[shown.length-1]+2].forEach(p => { if (p >= 1 && p <= n) { const im = new Image(); im.src = cur.pages[p-1]; } });
 }
 const MAXW = 3060;          // cap so pages never get too blurry on very wide screens
-let zs = 2;                 // zoom level, as multiples of the screen width
+let zs = 1;
+// Default zoom: 1× (page fills the width) on computers and tablets; 2× (half a page) on phones,
+// where the normal view already shows a full-width page.
+const defaultZoom = () => matchMedia('(max-width: 600px)').matches ? 2 : 1;                 // zoom level, as multiples of the screen width
 function keepCenter(fn){
   const st = $('stage'), b = $('spread').querySelector('.pg');
   if (!b) { fn(); return; }
@@ -435,7 +438,7 @@ function changeZoom(d){
 function sizePages(){
   const sp = $('spread'), st = $('stage');
   if (zoom) {
-    // Zoomed: by default half a page fills the screen width (2×); +/− adjust from 1× to 3×.
+    // Zoomed: width is the screen width times the zoom level (see defaultZoom); + and − adjust from 1× to 3×.
     const w = Math.round(Math.min(MAXW, st.clientWidth * zs));
     sp.querySelectorAll('.pg').forEach(b => { b.style.width = w + 'px'; b.style.height = Math.round(w * 792 / 612) + 'px'; });
     return;
@@ -520,7 +523,7 @@ $('closeBtn').onclick = closeReader;
 // half: 0 = left half of the page, 1 = right half. fy: how far down the page to center (0–1).
 function setZoom(on, half, fy){
   zoom = on;
-  if (on) zs = 2;
+  if (on) zs = defaultZoom();
   $('zoomBtn').setAttribute('aria-pressed', on);
   $('stage').classList.toggle('zoom', on);
   $('zoomHint').textContent = on ? 'Double-tap to zoom out' : 'Double-tap a page to zoom';
