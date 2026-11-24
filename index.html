@@ -103,7 +103,7 @@ a{color:var(--accent)}
 /* Reader */
 .reader{position:fixed;inset:0;z-index:20;background:var(--stage);color:var(--stage-ink);display:none;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 .reader.open{display:flex}
-.bar{display:flex;align-items:center;gap:10px;padding:10px clamp(10px,2vw,20px);border-bottom:1px solid var(--stage-line);flex:none}
+.bar{position:relative;display:flex;align-items:center;gap:8px;padding:8px clamp(10px,2vw,20px);border-bottom:1px solid var(--stage-line);flex:none}
 .bar .title{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
 .bar .title small{font-weight:400;opacity:.7;margin-left:8px}
 .ibtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:42px;height:42px;padding:0 12px;border-radius:10px;border:1px solid var(--stage-line);background:transparent;cursor:pointer;color:var(--stage-ink);font-size:15px}
@@ -111,7 +111,7 @@ a{color:var(--accent)}
 .ibtn[aria-pressed="true"]{background:var(--stage-ink);color:var(--stage)}
 .ibtn:focus-visible{outline:3px solid #8DA8FF;outline-offset:2px}
 .stage{position:relative;flex:1;min-height:0;overflow:hidden}
-.spread{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:clamp(10px,2.4vh,28px) clamp(56px,7vw,96px);gap:0}
+.spread{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:clamp(6px,1.4vh,14px) clamp(50px,4.2vw,70px);gap:0}
 .spread .pg{position:relative;flex:none;background:#fff;box-shadow:0 10px 40px -10px rgba(0,0,0,.6)}
 .spread .pg img{width:100%;height:100%;display:block}
 .pg a.hot{position:absolute;border-radius:3px;background:rgba(43,90,230,.10);outline:1px solid rgba(43,90,230,.28);transition:background .15s}
@@ -144,7 +144,36 @@ a{color:var(--accent)}
   .spread{padding:10px 10px}
   .nav{width:40px;height:40px;top:auto;bottom:12px;transform:none}
 }
-@media (max-width:560px){ .ibtn .lbl{display:none} }
+@media (max-width:900px){ .ibtn .lbl{display:none} .ibtn{padding:0 10px} }
+.ibtn[hidden]{display:none}
+/* thumbnail strip */
+.thumbwrap{flex:none;border-top:1px solid var(--stage-line);background:rgba(0,0,0,.18)}
+.thumbwrap[hidden]{display:none}
+.thumbs{display:flex;gap:14px;overflow-x:auto;padding:12px 16px 10px;scroll-padding:0 40%}
+.th{all:unset;box-sizing:border-box;cursor:pointer;flex:none;display:grid;grid-auto-flow:column;gap:0;justify-items:center;padding:4px;border-radius:6px;border:2px solid transparent}
+.th img{height:clamp(72px,13vh,118px);width:auto;aspect-ratio:612/792;background:#fff;display:block}
+.th span{grid-row:2;grid-column:1 / -1;font-size:13px;opacity:.8;margin-top:4px;font-variant-numeric:tabular-nums}
+.th:hover{border-color:var(--stage-line)}
+.th.current{border-color:#8DA8FF}
+.th:focus-visible{outline:3px solid #8DA8FF;outline-offset:2px}
+/* zoom level controls */
+.zoomctl{display:none;align-items:center;gap:6px}
+.stage.zoom ~ .foot .zoomctl{display:inline-flex}
+.stage.zoom ~ .foot .hint{display:none}
+.zoomctl button{width:34px;height:34px;border-radius:50%;border:1px solid var(--stage-line);background:transparent;color:var(--stage-ink);font-size:20px;line-height:1;cursor:pointer}
+.zoomctl button:disabled{opacity:.3;cursor:default}
+.zoomctl button:focus-visible{outline:3px solid #8DA8FF;outline-offset:2px}
+.zoomctl output{min-width:3.2em;text-align:center;font-variant-numeric:tabular-nums}
+/* share panel */
+.sharebox{position:absolute;right:clamp(10px,2vw,20px);top:calc(100% + 8px);z-index:5;width:min(340px,calc(100vw - 20px));background:#1E2230;color:#E6E9EF;border:1px solid #3A3F4A;border-radius:14px;padding:16px;box-shadow:0 20px 50px -10px rgba(0,0,0,.6)}
+.sharebox[hidden]{display:none}
+.sharebox h3{margin:0 0 10px;font-size:17px;font-weight:600}
+.sharebox .row{display:flex;gap:8px}
+.sharebox input{flex:1;min-width:0;font:inherit;font-size:14px;padding:9px 10px;border-radius:8px;border:1px solid #3A3F4A;background:#121520;color:#E6E9EF}
+.sharebox .acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.sharebox .acts a,.sharebox .acts button,.sharebox .row button{display:inline-flex;align-items:center;gap:6px;padding:9px 12px;border-radius:8px;border:1px solid #3A3F4A;background:transparent;color:inherit;font:inherit;font-size:14px;text-decoration:none;cursor:pointer}
+.sharebox .row button{background:#8DA8FF;color:#121827;border-color:#8DA8FF;font-weight:600}
+.sharebox a:focus-visible,.sharebox button:focus-visible{outline:3px solid #8DA8FF;outline-offset:2px}
 @media (prefers-reduced-motion:reduce){ .spread.anim{animation:none} .cover-btn img{transition:none} }
 </style>
 </head>
@@ -205,23 +234,53 @@ a{color:var(--accent)}
 <div class="reader" id="reader" role="dialog" aria-modal="true" aria-labelledby="rTitle">
   <div class="bar">
     <div class="title" id="rTitle"></div>
+    <button class="ibtn" id="thumbBtn" aria-pressed="false" aria-controls="thumbwrap" title="Show all pages">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="lbl">Pages</span>
+    </button>
     <button class="ibtn" id="zoomBtn" aria-pressed="false" title="Zoom in to read">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5M11 8v6M8 11h6"/></svg><span class="lbl">Zoom</span>
+    </button>
+    <button class="ibtn" id="fsBtn" aria-pressed="false" title="Full screen">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span class="lbl">Full screen</span>
+    </button>
+    <button class="ibtn" id="shareBtn" aria-expanded="false" aria-controls="sharebox" title="Share this page">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg><span class="lbl">Share</span>
     </button>
     <button class="ibtn" id="closeBtn" title="Close reader (Esc)">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg><span class="lbl">Close</span>
     </button>
+    <div class="sharebox" id="sharebox" role="dialog" aria-label="Share this page" hidden>
+      <h3 id="shareTitle">Share this page</h3>
+      <div class="row">
+        <label for="shareUrl" class="sr">Link to this page</label>
+        <input id="shareUrl" readonly>
+        <button id="copyBtn" type="button">Copy link</button>
+      </div>
+      <div class="acts">
+        <a id="shareEmail" href="#">Email</a>
+        <a id="shareFb" href="#" target="_blank" rel="noopener">Facebook</a>
+        <button id="shareMore" type="button" hidden>More…</button>
+      </div>
+    </div>
   </div>
   <div class="stage" id="stage">
     <button class="nav prev" id="prevBtn" aria-label="Previous page"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
     <div class="spread" id="spread"></div>
     <button class="nav next" id="nextBtn" aria-label="Next page"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
   </div>
+  <div class="thumbwrap" id="thumbwrap" hidden>
+    <div class="thumbs" id="thumbs" role="list" aria-label="Pages in this issue"></div>
+  </div>
   <div class="foot">
     <label for="slider" class="sr">Go to page</label>
     <input type="range" id="slider" min="1" value="1">
     <span id="pageLabel" aria-live="polite"></span>
     <span class="hint" id="zoomHint">Double-tap a page to zoom</span>
+    <span class="zoomctl" role="group" aria-label="Zoom level">
+      <button type="button" id="zoomOut" aria-label="Zoom out">−</button>
+      <output id="zoomLevel" aria-live="polite">2×</output>
+      <button type="button" id="zoomIn" aria-label="Zoom in">+</button>
+    </span>
   </div>
 </div>
 
@@ -346,13 +405,38 @@ function render(dir){
   $('nextBtn').disabled = shown[shown.length - 1] >= n;
   $('stage').scrollTop = 0; $('stage').scrollLeft = 0;
   setHash(cur.slug + '-p' + shown[0]);
+  markThumb(shown[0]);
+  if (!$('sharebox').hidden) fillShare();
   [shown[0]-2, shown[0]-1, shown[shown.length-1]+1, shown[shown.length-1]+2].forEach(p => { if (p >= 1 && p <= n) { const im = new Image(); im.src = cur.pages[p-1]; } });
+}
+const MAXW = 3060;          // cap so pages never get too blurry on very wide screens
+let zs = 2;                 // zoom level, as multiples of the screen width
+function keepCenter(fn){
+  const st = $('stage'), b = $('spread').querySelector('.pg');
+  if (!b) { fn(); return; }
+  const fx = (st.scrollLeft + st.clientWidth / 2 - b.offsetLeft) / b.offsetWidth;
+  const fy = (st.scrollTop + st.clientHeight / 2 - b.offsetTop) / b.offsetHeight;
+  fn();
+  st.scrollLeft = b.offsetLeft + fx * b.offsetWidth - st.clientWidth / 2;
+  st.scrollTop = b.offsetTop + fy * b.offsetHeight - st.clientHeight / 2;
+}
+function updateZoomUI(){
+  const st = $('stage');
+  $('zoomLevel').textContent = (Math.round(zs * 10) / 10) + '×';
+  $('zoomOut').disabled = zs <= 1;
+  $('zoomIn').disabled = zs >= 3 || st.clientWidth * zs >= MAXW;
+}
+function changeZoom(d){
+  if (!zoom) return;
+  const nz = Math.min(3, Math.max(1, zs + d));
+  if (nz === zs || (d > 0 && $('stage').clientWidth * zs >= MAXW)) return;
+  zs = nz; keepCenter(sizePages); updateZoomUI();
 }
 function sizePages(){
   const sp = $('spread'), st = $('stage');
   if (zoom) {
-    // Zoomed: half a page fills the screen width, so one half-page column is readable.
-    const w = Math.round(Math.min(2448, st.clientWidth * 2));
+    // Zoomed: by default half a page fills the screen width (2×); +/− adjust from 1× to 3×.
+    const w = Math.round(Math.min(MAXW, st.clientWidth * zs));
     sp.querySelectorAll('.pg').forEach(b => { b.style.width = w + 'px'; b.style.height = Math.round(w * 792 / 612) + 'px'; });
     return;
   }
@@ -362,6 +446,36 @@ function sizePages(){
   const boxes = sp.querySelectorAll('.pg'), r = 612 / 792;
   const w = Math.floor(Math.min(H * r, W / boxes.length));
   boxes.forEach(b => { b.style.width = w + 'px'; b.style.height = Math.round(w / r) + 'px'; });
+}
+function spreadsList(){
+  const n = cur.pages.length, out = [[1]];
+  for (let p = 2; p <= n; p += 2) out.push(p + 1 <= n ? [p, p + 1] : [p]);
+  return out;
+}
+function buildThumbs(){
+  const box = $('thumbs'); box.innerHTML = '';
+  spreadsList().forEach(s => {
+    const b = document.createElement('button');
+    b.className = 'th'; b.type = 'button'; b.setAttribute('role', 'listitem');
+    b.dataset.first = s[0];
+    b.setAttribute('aria-label', (s.length === 2 ? 'Pages ' + s.join(' and ') : 'Page ' + s[0]));
+    s.forEach(p => { const im = document.createElement('img'); im.loading = 'lazy'; im.alt = ''; im.src = cur.pages[p - 1]; b.appendChild(im); });
+    const l = document.createElement('span'); l.textContent = s.join('–'); b.appendChild(l);
+    b.onclick = () => { page = s[0]; showThumbs(false); if (zoom) setZoom(false); else render(0); };
+    box.appendChild(b);
+  });
+}
+function markThumb(first){
+  const start = first === 1 ? 1 : (first % 2 === 0 ? first : first - 1);
+  let curEl = null;
+  $('thumbs').querySelectorAll('.th').forEach(b => { const on = +b.dataset.first === start; b.classList.toggle('current', on); if (on) { curEl = b; b.setAttribute('aria-current', 'page'); } else b.removeAttribute('aria-current'); });
+  if (curEl && !$('thumbwrap').hidden) curEl.scrollIntoView({ inline: 'center', block: 'nearest' });
+}
+function showThumbs(on){
+  $('thumbwrap').hidden = !on;
+  $('thumbBtn').setAttribute('aria-pressed', on);
+  if (zoom) keepCenter(sizePages); else sizePages();
+  if (on) { markThumb(pagesFor(page)[0]); const c = $('thumbs').querySelector('.current'); if (c) c.focus({ preventScroll: true }); }
 }
 function go(delta){
   const shown = pagesFor(page), n = cur.pages.length;
@@ -378,10 +492,13 @@ function openReader(issue, p){
   $('rTitle').querySelector('small').textContent = issue.title;
   $('reader').classList.add('open');
   document.body.style.overflow = 'hidden';
+  buildThumbs();
   render(0);
   $('closeBtn').focus();
 }
 function closeReader(){
+  showShare(false); $('thumbwrap').hidden = true; $('thumbBtn').setAttribute('aria-pressed', false);
+  if (isFS()) exitFS();
   $('reader').classList.remove('open');
   document.body.style.overflow = '';
   setHash('');
@@ -403,6 +520,7 @@ $('closeBtn').onclick = closeReader;
 // half: 0 = left half of the page, 1 = right half. fy: how far down the page to center (0–1).
 function setZoom(on, half, fy){
   zoom = on;
+  if (on) zs = 2;
   $('zoomBtn').setAttribute('aria-pressed', on);
   $('stage').classList.toggle('zoom', on);
   $('zoomHint').textContent = on ? 'Double-tap to zoom out' : 'Double-tap a page to zoom';
@@ -411,8 +529,51 @@ function setZoom(on, half, fy){
     const st = $('stage'), b = $('spread').querySelector('.pg');
     st.scrollLeft = b.offsetLeft + half * b.offsetWidth / 2;
     st.scrollTop = b.offsetTop + fy * b.offsetHeight - st.clientHeight / 2;
+    updateZoomUI();
   }
 }
+$('zoomIn').onclick = () => changeZoom(0.5);
+$('zoomOut').onclick = () => changeZoom(-0.5);
+$('thumbBtn').onclick = () => showThumbs($('thumbwrap').hidden);
+// full screen
+const isFS = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+const exitFS = () => (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+if (!(document.fullscreenEnabled || document.webkitFullscreenEnabled)) $('fsBtn').hidden = true;
+$('fsBtn').onclick = () => {
+  if (isFS()) exitFS();
+  else { const el = document.documentElement; (el.requestFullscreen || el.webkitRequestFullscreen).call(el); }
+};
+['fullscreenchange', 'webkitfullscreenchange'].forEach(ev => document.addEventListener(ev, () => $('fsBtn').setAttribute('aria-pressed', isFS())));
+// share
+function shareUrl(){ return location.href.split('#')[0] + '#' + cur.slug + '-p' + pagesFor(page)[0]; }
+function fillShare(){
+  const url = shareUrl(), shown = pagesFor(page);
+  const what = 'Our Community, ' + cur.title + (shown[0] > 1 ? ', page ' + shown[0] : '');
+  $('shareTitle').textContent = shown[0] > 1 ? 'Share page ' + shown[0] : 'Share this issue';
+  $('shareUrl').value = url;
+  $('shareEmail').href = 'mailto:?subject=' + encodeURIComponent(what) + '&body=' + encodeURIComponent('Take a look at ' + what + ':\n' + url);
+  $('shareFb').href = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url);
+  $('copyBtn').textContent = 'Copy link';
+}
+function showShare(on){
+  $('sharebox').hidden = !on;
+  $('shareBtn').setAttribute('aria-expanded', on);
+  if (on) { fillShare(); $('copyBtn').focus(); }
+}
+$('shareBtn').onclick = () => showShare($('sharebox').hidden);
+$('copyBtn').onclick = async () => {
+  const url = $('shareUrl').value;
+  try { await navigator.clipboard.writeText(url); }
+  catch (e) { $('shareUrl').select(); try { document.execCommand('copy'); } catch (e2) {} }
+  $('copyBtn').textContent = 'Copied!';
+};
+if (navigator.share) {
+  $('shareMore').hidden = false;
+  $('shareMore').onclick = () => navigator.share({ title: 'Our Community, ' + cur.title, url: $('shareUrl').value }).catch(() => {});
+}
+document.addEventListener('click', e => {
+  if (!$('sharebox').hidden && !e.target.closest('#sharebox,#shareBtn')) showShare(false);
+});
 $('zoomBtn').onclick = () => setZoom(!zoom, 0, 0);
 // Double-tap (or double-click) a page to zoom so the tapped half of the page fills the screen;
 // double-tap again to zoom back out. Single taps do nothing, so reading and swiping aren't interrupted.
@@ -447,11 +608,18 @@ window.addEventListener('mouseup', () => { drag = null; $('stage').classList.rem
 $('slider').oninput = e => { page = +e.target.value; render(0); };
 document.addEventListener('keydown', e => {
   if (!$('reader').classList.contains('open')) return;
-  if (e.key === 'Escape') { if (zoom) setZoom(false); else closeReader(); }
+  if (e.key === 'Escape') {
+    if (!$('sharebox').hidden) { showShare(false); $('shareBtn').focus(); }
+    else if (!$('thumbwrap').hidden) { showThumbs(false); $('thumbBtn').focus(); }
+    else if (zoom) setZoom(false);
+    else closeReader();
+  }
+  else if (zoom && (e.key === '+' || e.key === '=')) changeZoom(0.5);
+  else if (zoom && e.key === '-') changeZoom(-0.5);
   else if (e.key === 'ArrowRight' && e.target.type !== 'range') go(1);
   else if (e.key === 'ArrowLeft' && e.target.type !== 'range') go(-1);
   else if (e.key === 'Tab') {
-    const f = [...$('reader').querySelectorAll('button:not([disabled]),input,a.hot')];
+    const f = [...$('reader').querySelectorAll('button:not([disabled]):not([hidden]),input,a.hot,.sharebox:not([hidden]) a')].filter(el => el.offsetParent !== null);
     const i = f.indexOf(document.activeElement);
     if (e.shiftKey && i <= 0) { f[f.length-1].focus(); e.preventDefault(); }
     else if (!e.shiftKey && i === f.length - 1) { f[0].focus(); e.preventDefault(); }
@@ -465,7 +633,10 @@ $('stage').addEventListener('touchend', e => {
   if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) go(dx < 0 ? 1 : -1);
   tx = null;
 });
-window.addEventListener('resize', () => { if (cur && $('reader').classList.contains('open')) render(0); });
+window.addEventListener('resize', () => {
+  if (!cur || !$('reader').classList.contains('open')) return;
+  if (zoom) { keepCenter(sizePages); updateZoomUI(); } else render(0);
+});
 window.addEventListener('hashchange', fromHash);
 fromHash();
 </script>
